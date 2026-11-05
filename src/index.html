@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>Asset Explorer — Static POC</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./assets.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Asset Explorer home">
+        <span class="brand-mark" aria-hidden="true">A</span>
+        <span>Asset<span class="brand-light"> Explorer</span><small>PROPERTY RECORDS</small></span>
+      </a>
+      <div class="header-actions">
+        <span class="storage-indicator"><i></i> Saved in this browser</span>
+        <button class="button button-quiet" id="reset-button" type="button">Reset sample data</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="intro">
+        <div>
+          <div class="eyebrow">PROPERTY CATALOGUE <span class="eyebrow-line"></span> DEMO WORKSPACE</div>
+          <h1>Assets, clearly connected.</h1>
+          <p>Explore property records and the relationships between them.</p>
+        </div>
+        <button class="button button-primary" id="create-button" type="button"><span aria-hidden="true">＋</span> New asset</button>
+      </section>
+
+      <aside class="notice" role="note">
+        <span class="notice-icon" aria-hidden="true">i</span>
+        <span><strong>Demonstration data only.</strong> Relationships and location descriptions are not evidence of title, ownership, or legal boundaries.</span>
+      </aside>
+
+      <section class="workspace" aria-label="Asset workspace">
+        <div class="catalogue panel">
+          <div class="panel-heading">
+            <div><div class="section-kicker">YOUR RECORDS</div><h2>Asset catalogue</h2></div>
+            <span class="count-pill" id="record-count">0 assets</span>
+          </div>
+          <label class="search-wrap" for="search-input"><span aria-hidden="true">⌕</span>
+            <input id="search-input" type="search" placeholder="Search name, address, ID…" autocomplete="off">
+            <kbd>⌘ K</kbd>
+          </label>
+          <div class="filter-row">
+            <label class="sr-only" for="type-filter">Filter by asset type</label>
+            <select id="type-filter">
+              <option value="">All asset types</option>
+              <option>Land parcel</option><option>Site</option><option>Estate</option><option>Building</option><option>Unit</option>
+            </select>
+            <label class="sr-only" for="status-filter">Filter by record status</label>
+            <select id="status-filter"><option value="">Any status</option><option>Active</option><option>Inactive</option><option>Archived</option></select>
+          </div>
+          <div class="list-caption"><span>ASSET</span><span>STATUS</span></div>
+          <ul class="asset-list" id="asset-list" aria-label="Assets"></ul>
+          <div class="list-foot"><span class="live-dot"></span> <span id="visible-count">0 records</span><span class="foot-divider">·</span> Local demo</div>
+        </div>
+
+        <section class="detail panel" id="detail-panel" aria-live="polite">
+          <div class="detail-empty"><span class="empty-glyph">⌖</span><h2>Select an asset</h2><p>Choose a record from the catalogue to see its details and connections.</p></div>
+        </section>
+      </section>
+      <footer class="page-footer"><span>ASSET EXPLORER <span class="footer-dot">/</span> STATIC POC</span><span>No server · No external services · Your changes stay in this browser</span></footer>
+    </main>
+  </div>
+  <dialog id="asset-dialog" aria-labelledby="dialog-title">
+    <form id="asset-form" novalidate>
+      <div class="dialog-heading"><div><div class="section-kicker">ASSET RECORD</div><h2 id="dialog-title">New asset</h2></div><button class="icon-button" id="close-dialog" type="button" aria-label="Close">×</button></div>
+      <div id="form-feedback" class="form-feedback" role="alert" hidden></div>
+      <input id="form-id" type="hidden">
+      <div class="form-grid">
+        <label class="field field-wide">Display name <span class="required">*</span><input id="form-name" name="name" required maxlength="120" placeholder="e.g. Riverside Works"></label>
+        <label class="field">Asset type <span class="required">*</span><select id="form-type" required><option value="">Choose type</option><option>Land parcel</option><option>Site</option><option>Estate</option><option>Building</option><option>Unit</option></select></label>
+        <label class="field">Record status <span class="required">*</span><select id="form-status" required><option>Active</option><option>Inactive</option><option>Archived</option></select></label>
+        <label class="field field-wide">Address or land/site location description <span class="required">*</span><input id="form-address" required maxlength="200" placeholder="Street address or a meaningful site description"></label>
+        <label class="field">City / locality<input id="form-city" maxlength="100" placeholder="City or locality"></label>
+        <label class="field">Country <span class="required">*</span><input id="form-country" required maxlength="80" placeholder="Country"></label>
+        <label class="field">Latitude <span class="required">*</span><input id="form-lat" required inputmode="decimal" placeholder="51.5072"></label>
+        <label class="field">Longitude <span class="required">*</span><input id="form-lon" required inputmode="decimal" placeholder="-0.1276"></label>
+        <label class="field">Coordinate reference system<input id="form-crs" value="WGS 84 (EPSG:4326)" maxlength="80"></label>
+        <label class="field">Location source<input id="form-location-source" maxlength="100" placeholder="e.g. Sample record"></label>
+        <label class="field">Sector<input id="form-sector" maxlength="100" placeholder="e.g. Commercial"></label>
+        <label class="field">Site association<input id="form-site" maxlength="120" placeholder="Optional site name"></label>
+        <label class="field field-wide">Description<textarea id="form-description" rows="3" maxlength="500" placeholder="A short physical description"></textarea></label>
+        <label class="field">External ID type<input id="form-external-type" maxlength="80" placeholder="e.g. Local property ref"></label>
+        <label class="field">External ID issuer / jurisdiction<input id="form-external-issuer" maxlength="100" placeholder="e.g. Sample authority"></label>
+        <label class="field field-wide">External ID value<input id="form-external-value" maxlength="100" placeholder="Optional"></label>
+      </div>
+      <section class="relationship-editor">
+        <div class="relationship-title"><div><div class="section-kicker">CONNECTIONS</div><h3>Related asset</h3></div><span class="optional-label">Optional</span></div>
+        <p>Creates an explicit link. It does not imply ownership or legal boundaries.</p>
+        <div class="form-grid relation-grid">
+          <label class="field">Relationship type<select id="form-rel-type"><option value="">No relationship</option><option value="part_of">Part of</option><option value="located_on">Located on</option><option value="associated_with">Associated with</option></select></label>
+          <label class="field">Related asset<select id="form-rel-target"><option value="">Choose an asset</option></select></label>
+          <label class="field">Source / provenance<input id="form-rel-source" maxlength="120" placeholder="e.g. Sample relationship"></label>
+        </div>
+        <p id="unit-guidance" class="inline-guidance" hidden>A Unit must have one active <code>part_of</code> relationship to its enclosing Building.</p>
+      </section>
+      <div class="dialog-actions"><button class="button button-quiet" id="cancel-dialog" type="button">Cancel</button><button class="button button-primary" type="submit">Save asset</button></div>
+    </form>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
