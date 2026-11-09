@@ -211,6 +211,22 @@ dialog form { padding: 21px 23px 17px; overflow: auto; max-height: min(90vh, 880
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px 12px; }
 .field { display: flex; flex-direction: column; gap: 5px; color: #b8b7c8; font-size: 10px; font-weight: 600; min-width: 0; }
 .field-wide { grid-column: 1 / -1; }
+.address-lookup { min-width: 0; border: 1px solid #302e40; background: #191822; border-radius: 8px; padding: 12px; }
+.address-lookup-heading h3 { margin: 2px 0 0; font-size: 12px; }
+.address-lookup > p { margin: 4px 0 10px; color: #8e8da0; font-size: 9px; }
+.address-lookup-search { display: grid; grid-template-columns: minmax(130px, .7fr) minmax(160px, 1.5fr) auto; align-items: end; gap: 8px; }
+.address-lookup-search .button { min-height: 34px; }
+.address-key-row { display: grid; grid-template-columns: minmax(140px, 1fr) auto minmax(120px, auto); align-items: end; gap: 8px; margin-top: 9px; }
+.address-key-row .button { min-height: 34px; }
+.address-key-status { padding-bottom: 8px; color: #8e8da0; font-size: 9px; }
+.address-lookup-feedback { margin: 8px 0 0 !important; color: #b6b4ca !important; }
+.address-lookup-feedback.error { color: #ff9ca5 !important; }
+.address-results { display: grid; gap: 5px; list-style: none; max-height: 170px; overflow: auto; margin: 8px 0 0; padding: 0; }
+.address-results button { display: flex; width: 100%; flex-direction: column; gap: 2px; padding: 8px 9px; border: 1px solid #343344; border-radius: 6px; background: #11111a; color: #e3e1ec; text-align: left; cursor: pointer; }
+.address-results button:hover:not(:disabled) { border-color: #726ce5; background: #201f30; }
+.address-results button:disabled, #loqate-search:disabled { cursor: wait; opacity: .65; }
+.address-results strong { font-size: 10px; font-weight: 600; }
+.address-results small { color: #9998ac; font-size: 9px; }
 .required { color: #dc8b9b; }
 .field input, .field select, .field textarea { border: 1px solid #383744; border-radius: 6px; color: #e3e1ec; background: #0e0e15; padding: 8px 9px; width: 100%; min-height: 34px; font-size: 11px; font-weight: 450; }
 .field textarea { resize: vertical; }
@@ -315,6 +331,13 @@ code { color: #d6bdff; }
 [data-theme="light"] .field input, [data-theme="light"] .field select, [data-theme="light"] .field textarea { border-color: #d5d6e0; color: #292a40; background: #fff; }
 [data-theme="light"] .field input::placeholder, [data-theme="light"] .field textarea::placeholder { color: #85869a; }
 [data-theme="light"] .relationship-editor { border-color: #e0e1eb; background: #f7f7fb; }
+[data-theme="light"] .address-lookup { border-color: #e0e1eb; background: #f7f7fb; }
+[data-theme="light"] .address-lookup > p, [data-theme="light"] .address-key-status { color: #6d6e82; }
+[data-theme="light"] .address-lookup-feedback { color: #555570 !important; }
+[data-theme="light"] .address-lookup-feedback.error { color: #9b2634 !important; }
+[data-theme="light"] .address-results button { border-color: #d9dae5; background: #fff; color: #292a40; }
+[data-theme="light"] .address-results button:hover:not(:disabled) { border-color: #726ce5; background: #f1f0ff; }
+[data-theme="light"] .address-results small { color: #74758a; }
 [data-theme="light"] .optional-label, [data-theme="light"] .relationship-editor > p { color: #6d6e82; }
 [data-theme="light"] .inline-guidance { color: #554b76 !important; }
 [data-theme="light"] code { color: #5d4880; }
@@ -371,6 +394,9 @@ code { color: #d6bdff; }
   .connection-meta { padding-left: 28px; flex: 1; }
   .end-link, .history-tag { margin-left: auto; }
   .form-grid { grid-template-columns: 1fr; }
+  .address-lookup-search { grid-template-columns: 1fr; }
+  .address-key-row { grid-template-columns: 1fr auto; }
+  .address-key-status { grid-column: 1 / -1; padding-bottom: 0; }
   .field-wide { grid-column: auto; }
   dialog form { padding: 17px 15px 14px; }
 }

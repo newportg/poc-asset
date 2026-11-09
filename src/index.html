@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="./styles.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
   <script src="./assets.js" defer></script>
+  <script src="./loqate-client.js" defer></script>
   <script src="./app.js" defer></script>
 </head>
 <body>
@@ -78,6 +79,36 @@
       <div class="dialog-heading"><div><div class="section-kicker">ASSET RECORD</div><h2 id="dialog-title">New asset</h2></div><button class="icon-button" id="close-dialog" type="button" aria-label="Close">×</button></div>
       <div id="form-feedback" class="form-feedback" role="alert" hidden></div>
       <input id="form-id" type="hidden">
+      <input id="form-location-precision" type="hidden">
+      <section class="address-lookup" aria-labelledby="address-lookup-title">
+        <div class="address-lookup-heading"><div><div class="section-kicker">LOQATE</div><h3 id="address-lookup-title">Find and verify an address</h3></div></div>
+        <p>Search for an address, then choose a result to fill the asset details.</p>
+        <div class="address-lookup-search">
+          <label class="field">Search country<select id="loqate-country">
+            <option value="GB" data-name="United Kingdom">United Kingdom</option>
+            <option value="US" data-name="United States">United States</option>
+            <option value="DE" data-name="Germany">Germany</option>
+            <option value="FR" data-name="France">France</option>
+            <option value="ES" data-name="Spain">Spain</option>
+            <option value="IT" data-name="Italy">Italy</option>
+            <option value="NL" data-name="Netherlands">Netherlands</option>
+            <option value="BE" data-name="Belgium">Belgium</option>
+            <option value="IE" data-name="Ireland">Ireland</option>
+            <option value="PT" data-name="Portugal">Portugal</option>
+            <option value="AU" data-name="Australia">Australia</option>
+            <option value="CA" data-name="Canada">Canada</option>
+          </select></label>
+          <label class="field">Postcode or address<input id="loqate-query" type="search" maxlength="200" placeholder="Enter postcode or address" autocomplete="off"></label>
+          <button class="button button-outline" id="loqate-search" type="button">Search</button>
+        </div>
+        <div class="address-key-row">
+          <label class="field">Loqate API key<input id="loqate-api-key" type="password" autocomplete="new-password" placeholder="Enter API key"></label>
+          <button class="button button-quiet" id="loqate-save-key" type="button">Save key</button>
+          <span id="loqate-key-status" class="address-key-status" role="status"></span>
+        </div>
+        <p id="address-lookup-feedback" class="address-lookup-feedback" role="status" aria-live="polite"></p>
+        <ul id="address-results" class="address-results" aria-label="Address search results" hidden></ul>
+      </section>
       <div class="form-grid">
         <label class="field field-wide">Display name <span class="required">*</span><input id="form-name" name="name" required maxlength="120" placeholder="e.g. Riverside Works"></label>
         <label class="field">Asset type <span class="required">*</span><select id="form-type" required><option value="">Choose type</option><option>Land parcel</option><option>Site</option><option>Estate</option><option>Building</option><option>Unit</option></select></label>

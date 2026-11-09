@@ -31,6 +31,8 @@ secure, backed up, or suitable for production data.
 - Detail pane zoom from 80% to 140% without changing the catalogue or page zoom.
 - Create and edit forms with required-field, coordinate, duplicate-id, and
   relationship validation.
+- Loqate address search and verification in the create/edit form, including
+  filling the display name, address, locality, country, and verified coordinates.
 - Typed relationships with effective dates and source; ended links remain visible
   as history. Building Units are derived from active Unit `part_of` links.
 - A resettable sample dataset and locally persisted edits.
@@ -38,9 +40,15 @@ secure, backed up, or suitable for production data.
 - A Leaflet map preview centered on each record's latitude/longitude; click it to
   open an interactive full-size map.
 
-All records are fictional demo data. Map tiles come from OpenStreetMap and display
-its attribution. Relationships and mapped locations do not
-establish title, ownership, legal boundaries, or inclusion in a transaction.
+The included sample records are fictional demo data. Loqate-verified addresses may
+refer to real locations. Map tiles come from OpenStreetMap and display its
+attribution. Relationships and mapped locations do not establish title, ownership,
+legal boundaries, or inclusion in a transaction.
+Live Loqate lookups require an API key, entered and saved in the form. It is stored
+in this browser's `localStorage` under the same key used by the POC Address app.
+Search and verification requests go directly from the browser to Loqate. Do not
+enter confidential or personal information; browser storage is not a production
+secret store.
 
 ## Project links
 
@@ -50,7 +58,8 @@ establish title, ownership, legal boundaries, or inclusion in a transaction.
 
 ## Validation
 
-Focused, dependency-free logic tests: `node --test tests/assets.test.mjs`
+Focused, dependency-free logic tests: `node --test tests/*.test.mjs`
 
 The tests cover required asset fields, coordinates, stable identifiers, relationship
-rules, derived inverse Unit links, and relationship history.
+rules, derived inverse Unit links, relationship history, and Loqate search/verification
+requests.

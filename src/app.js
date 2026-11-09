@@ -9,12 +9,25 @@
   const form = $("#asset-form");
   const toast = $("#toast");
   const THEME_STORAGE_KEY = "poc-asset.theme.v1";
+  const LOQATE_KEY_STORAGE_KEY = "loqate_api_key";
   let assets = loadAssets();
+  let loqateApiKey = loadLoqateKey();
   let selectedId = assets[0]?.id || "";
   let detailZoom = 100;
   let toastTimer;
   let previewMap;
   let fullMap;
+  let addressSearchId = 0;
+  let addressResults = [];
+
+  function loadLoqateKey() {
+    try {
+      return localStorage.getItem(LOQATE_KEY_STORAGE_KEY) || "";
+    } catch (error) {
+      console.warn("Could not read the Loqate API key.", error);
+      return "";
+    }
+  }
 
   function loadTheme() {
     try {
@@ -23,6 +36,138 @@
       console.warn("Could not read the theme preference.", error);
       return "dark";
     }
+  }
+
+  function setAddressFeedback(message, kind = "") {
+    const feedback = $("#address-lookup-feedback");
+    feedback.textContent = message;
+    feedback.classList.toggle("error", kind === "error");
+  }
+
+  function saveLoqateKey() {
+    const key = $("#loqate-api-key").value.trim();
+    try {
+      if (key) localStorage.setItem(LOQATE_KEY_STORAGE_KEY, key);
+      else localStorage.removeItem(LOQATE_KEY_STORAGE_KEY);
+      loqateApiKey = key;
+      $("#loqate-key-status").textContent = key ? "Key saved in this browser." : "Key removed.";
+      setAddressFeedback(key ? "Live Loqate address search is ready." : "Enter and save an API key to search live addresses.");
+    } catch (error) {
+      console.error("Could not save the Loqate API key.", error);
+      $("#loqate-key-status").textContent = "Could not save key.";
+      setAddressFeedback("Could not save the API key in browser storage.", "error");
+    }
+  }
+
+  async function searchAddresses() {
+    const query = $("#loqate-query").value.trim();
+    if (!query) {
+      setAddressFeedback("Enter a postcode or address to search.", "error");
+      $("#loqate-query").focus();
+      return;
+    }
+    if (!loqateApiKey) {
+      setAddressFeedback("Enter and save a Loqate API key before searching.", "error");
+      $("#loqate-api-key").focus();
+      return;
+    }
+
+    const requestId = ++addressSearchId;
+    const searchButton = $("#loqate-search");
+    const resultsList = $("#address-results");
+    addressResults = [];
+    resultsList.replaceChildren();
+    resultsList.hidden = true;
+    searchButton.disabled = true;
+    setAddressFeedback("Searching Loqate…");
+    try {
+      const results = await window.LoqateClient.search(loqateApiKey, $("#loqate-country").value, query);
+      if (requestId !== addressSearchId) return;
+      addressResults = results;
+      if (!results.length) {
+        setAddressFeedback("No matching addresses found.");
+        return;
+      }
+      results.forEach((result, index) => {
+        const item = document.createElement("li");
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.addressIndex = String(index);
+        button.innerHTML = `<strong>${escapeHtml(result.text)}</strong><small>${escapeHtml(result.description)}</small>`;
+        item.append(button);
+        resultsList.append(item);
+      });
+      resultsList.hidden = false;
+      setAddressFeedback(`${results.length} address ${results.length === 1 ? "match" : "matches"} found. Choose one to verify and fill the form.`);
+    } catch (error) {
+      if (requestId === addressSearchId) {
+        console.error("Loqate address search failed.", error);
+        setAddressFeedback(`Address search failed: ${error.message}`, "error");
+      }
+    } finally {
+      if (requestId === addressSearchId) searchButton.disabled = false;
+    }
+  }
+
+  async function selectAddress(index) {
+    const result = addressResults[index];
+    if (!result || !loqateApiKey) return;
+    const requestId = ++addressSearchId;
+    $("#loqate-search").disabled = true;
+    $("#address-results").querySelectorAll("button").forEach(button => { button.disabled = true; });
+    setAddressFeedback("Verifying the selected address…");
+    try {
+      const countryCode = $("#loqate-country").value;
+      const address = await window.LoqateClient.retrieve(loqateApiKey, result, countryCode);
+      if (requestId !== addressSearchId) return;
+
+      const addressParts = [address.Address1, address.Address2, address.Address3, address.Address4, address.Address5, address.PostalCode]
+        .filter((part, position, parts) => part && parts.indexOf(part) === position);
+      const latitude = Number(address.Latitude);
+      const longitude = Number(address.Longitude);
+      const hasCoordinates = address.Latitude !== "" && address.Latitude != null &&
+        address.Longitude !== "" && address.Longitude != null &&
+        Number.isFinite(latitude) && latitude >= -90 && latitude <= 90 &&
+        Number.isFinite(longitude) && longitude >= -180 && longitude <= 180;
+      const selectedCountry = $("#loqate-country").selectedOptions[0];
+      $("#form-name").value = (address.Organisation || address.Address1 || result.text).slice(0, 120);
+      $("#form-address").value = (addressParts.join(", ") || result.text).slice(0, 200);
+      $("#form-city").value = address.Locality || address.DependentLocality || result.description || "";
+      $("#form-country").value = address.CountryName || selectedCountry.dataset.name;
+      $("#form-lat").value = hasCoordinates ? String(latitude) : "";
+      $("#form-lon").value = hasCoordinates ? String(longitude) : "";
+      $("#form-crs").value = "WGS 84 (EPSG:4326)";
+      $("#form-location-source").value = "Loqate verified address";
+      $("#form-location-precision").value = hasCoordinates ? "Verified address" : "";
+      const coordinateMessage = hasCoordinates ? "Address and coordinates filled in." : "Address verified, but no coordinates were returned; enter coordinates before saving.";
+      setAddressFeedback(coordinateMessage);
+    } catch (error) {
+      if (requestId === addressSearchId) {
+        console.error("Loqate address verification failed.", error);
+        setAddressFeedback(`Address verification failed: ${error.message}`, "error");
+      }
+    } finally {
+      if (requestId === addressSearchId) {
+        $("#loqate-search").disabled = false;
+        $("#address-results").querySelectorAll("button").forEach(button => { button.disabled = false; });
+      }
+    }
+  }
+
+  function clearAddressProvenance() {
+    if ($("#form-location-source").value === "Loqate verified address") {
+      $("#form-location-source").value = "";
+      $("#form-location-precision").value = "";
+    }
+  }
+
+  function invalidateAddressSearch() {
+    addressSearchId++;
+    addressResults = [];
+    $("#loqate-search").disabled = false;
+    $("#address-results").replaceChildren();
+    $("#address-results").hidden = true;
+    setAddressFeedback("");
   }
 
   function setTheme(theme, save = false) {
@@ -261,8 +406,14 @@
   }
 
   function openForm(asset = null) {
+    addressSearchId++;
+    addressResults = [];
     form.reset();
     $("#form-feedback").hidden = true;
+    $("#loqate-search").disabled = false;
+    $("#address-results").replaceChildren();
+    $("#address-results").hidden = true;
+    $("#address-lookup-feedback").textContent = "";
     $("#dialog-title").textContent = asset ? "Edit asset" : "New asset";
     $("#form-id").value = asset?.id || "";
     $("#form-name").value = asset?.name || "";
@@ -275,6 +426,11 @@
     $("#form-lon").value = asset?.location?.longitude ?? "";
     $("#form-crs").value = asset?.location?.crs || "WGS 84 (EPSG:4326)";
     $("#form-location-source").value = asset?.location?.source || "";
+    $("#form-location-precision").value = asset?.location?.precision || "";
+    $("#loqate-api-key").value = loqateApiKey;
+    $("#loqate-key-status").textContent = loqateApiKey ? "Key saved in this browser." : "Save a key to enable live search.";
+    const countryOption = [...$("#loqate-country").options].find(option => option.dataset.name === asset?.country);
+    if (countryOption) $("#loqate-country").value = countryOption.value;
     $("#form-sector").value = asset?.sector || "";
     $("#form-site").value = asset?.site || "";
     $("#form-description").value = asset?.description || "";
@@ -320,6 +476,7 @@
       address: $("#form-address").value.trim(), city: $("#form-city").value.trim(), country: $("#form-country").value.trim(),
       latitude: $("#form-lat").value.trim(), longitude: $("#form-lon").value.trim(),
       crs: $("#form-crs").value.trim(), locationSource: $("#form-location-source").value.trim(),
+      locationPrecision: $("#form-location-precision").value.trim(),
       sector: $("#form-sector").value.trim(), site: $("#form-site").value.trim(), description: $("#form-description").value.trim(),
       externalIdentifiers: $("#form-external-value").value.trim() ? [{ type: $("#form-external-type").value.trim() || "External reference", issuer: $("#form-external-issuer").value.trim(), value: $("#form-external-value").value.trim(), source: "User-entered demo data" }] : [],
       relationship, current, previousActive: current?.relationships?.find(link => link.status === "Active") || null
@@ -354,7 +511,7 @@
     if (record.relationship) relationships.push(M.normalizeRelationship(record.relationship, `REL-${Date.now()}`));
     const saved = {
       id: record.id, name: record.name, type: record.type, status: record.status, address: record.address, city: record.city, country: record.country,
-      location: { latitude: Number(record.latitude), longitude: Number(record.longitude), crs: record.crs, source: record.locationSource || "User-entered demo data", capturedAt: record.current?.location?.capturedAt || now.slice(0, 10), precision: record.current?.location?.precision || "Unspecified" },
+      location: { latitude: Number(record.latitude), longitude: Number(record.longitude), crs: record.crs, source: record.locationSource || "User-entered demo data", capturedAt: record.current?.location?.capturedAt || now.slice(0, 10), precision: record.locationPrecision || record.current?.location?.precision || "Unspecified" },
       sector: record.sector, site: record.site, description: record.description, externalIdentifiers: record.externalIdentifiers,
       instructions: record.current?.instructions || [], wipCount: record.current?.wipCount || 0, relationships, history,
       createdAt: record.current?.createdAt || now, updatedAt: now
@@ -435,6 +592,7 @@
   $("#close-dialog").addEventListener("click", () => dialog.close());
   $("#cancel-dialog").addEventListener("click", () => dialog.close());
   dialog.addEventListener("click", event => { if (event.target === dialog) dialog.close(); });
+  dialog.addEventListener("close", () => { addressSearchId++; });
   $("#close-map-dialog").addEventListener("click", () => mapDialog.close());
   mapDialog.addEventListener("click", event => { if (event.target === mapDialog) mapDialog.close(); });
   mapDialog.addEventListener("close", () => {
@@ -442,6 +600,20 @@
     fullMap = undefined;
   });
   form.addEventListener("submit", submitAsset);
+  $("#loqate-save-key").addEventListener("click", saveLoqateKey);
+  $("#loqate-search").addEventListener("click", searchAddresses);
+  $("#loqate-query").addEventListener("keydown", event => {
+    if (event.key === "Enter") { event.preventDefault(); searchAddresses(); }
+  });
+  $("#loqate-query").addEventListener("input", invalidateAddressSearch);
+  $("#loqate-country").addEventListener("change", invalidateAddressSearch);
+  $("#address-results").addEventListener("click", event => {
+    const result = event.target.closest("[data-address-index]");
+    if (result) selectAddress(Number(result.dataset.addressIndex));
+  });
+  ["#form-address", "#form-city", "#form-country", "#form-lat", "#form-lon"].forEach(selector => {
+    $(selector).addEventListener("input", clearAddressProvenance);
+  });
   $("#form-type").addEventListener("change", updateUnitGuidance);
   $("#form-rel-type").addEventListener("change", () => updateRelationTargets($("#form-id").value));
   $("#form-rel-target").addEventListener("change", () => { if ($("#form-type").value === "Unit") $("#form-rel-type").value = "part_of"; });

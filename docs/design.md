@@ -31,10 +31,17 @@ and source. A Unit can only be linked using `part_of` to a Building. Search span
 stable ID, external reference, name, address, locality, country, description, Sector,
 and Site; type and record status are separate filters.
 
+Create and edit forms can search and verify addresses through Loqate's browser APIs.
+The Loqate API key is stored locally under `loqate_api_key`, shared with the POC
+Address app. Choosing a verified result fills the display name, address, locality,
+country, and WGS 84 coordinates when available; the result's provenance is saved
+with the Asset.
+
 ## Deliberate limitations
 
-- Every record and coordinate is fictional and illustrative. The app does not verify
-  addresses, geocode, render geometry, or connect to a registry.
+- Sample records and coordinates are fictional and illustrative. Loqate verification
+  is available only with a configured API key and network access; it does not render
+  geometry or connect to a registry.
 - Maps require an internet connection and use Leaflet from a CDN with OpenStreetMap
   tiles. Coordinates are plotted as latitude/longitude; the map does not transform
   alternate coordinate reference systems.
@@ -46,16 +53,18 @@ and Site; type and record status are separate filters.
   edited. They do not represent an approved production relationship schema.
 - Local storage can be cleared or altered by the browser user. Do not enter real,
   confidential, or personal data.
+- The Loqate API key is visible to the browser and is not stored in a production
+  secret vault. Requests are sent directly from the browser to Loqate.
 
 The interface and records must not be used to infer title, ownership, valuation,
 legal status, transaction inclusion, cadastral boundaries, or compliance outcomes.
 
 ## Validation
 
-Run `node --test tests/assets.test.mjs` with Node.js. The test suite has no package
-dependencies and checks pure model, search, validation, and inverse relationship
-behavior. Manually verify the static entry point in a modern browser for responsive
-layout and localStorage persistence.
+Run `node --test tests/*.test.mjs` with Node.js. The test suite has no package
+dependencies and checks the asset model, Loqate client requests, and inverse
+relationship behavior. Manually verify the static entry point in a modern browser
+for responsive layout and localStorage persistence.
 
 ## Related project
 
