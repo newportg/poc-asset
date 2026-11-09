@@ -1,11 +1,13 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0a0a0f">
   <title>Asset Explorer — Static POC</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <link rel="stylesheet" href="./styles.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
   <script src="./assets.js" defer></script>
   <script src="./app.js" defer></script>
 </head>
@@ -18,6 +20,9 @@
       </a>
       <div class="header-actions">
         <span class="storage-indicator"><i></i> Saved in this browser</span>
+        <button class="button button-quiet theme-toggle" id="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch to light theme">
+          <span class="theme-icon" aria-hidden="true">☼</span><span class="theme-label">Light</span>
+        </button>
         <button class="button button-quiet" id="reset-button" type="button">Reset sample data</button>
       </div>
     </header>
@@ -65,7 +70,7 @@
           <div class="detail-empty"><span class="empty-glyph">⌖</span><h2>Select an asset</h2><p>Choose a record from the catalogue to see its details and connections.</p></div>
         </section>
       </section>
-      <footer class="page-footer"><span>ASSET EXPLORER <span class="footer-dot">/</span> STATIC POC</span><span>No server · No external services · Your changes stay in this browser</span></footer>
+      <footer class="page-footer"><span>ASSET EXPLORER <span class="footer-dot">/</span> STATIC POC</span><span>No server · Map tiles from OpenStreetMap · Your changes stay in this browser</span></footer>
     </main>
   </div>
   <dialog id="asset-dialog" aria-labelledby="dialog-title">
@@ -105,5 +110,12 @@
     </form>
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <dialog id="map-dialog" class="map-dialog" aria-labelledby="map-dialog-title">
+    <div class="map-dialog-heading">
+      <div><div class="section-kicker">ASSET LOCATION</div><h2 id="map-dialog-title">Location map</h2></div>
+      <button class="icon-button" id="close-map-dialog" type="button" aria-label="Close map">×</button>
+    </div>
+    <div id="full-location-map" class="full-location-map" role="application" aria-label="Interactive asset location map"></div>
+  </dialog>
 </body>
 </html>
