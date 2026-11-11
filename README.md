@@ -46,9 +46,23 @@ attribution. Relationships and mapped locations do not establish title, ownershi
 legal boundaries, or inclusion in a transaction.
 Live Loqate lookups require an API key, entered and saved in the form. It is stored
 in this browser's `localStorage` under the same key used by the POC Address app.
-Search and verification requests go directly from the browser to Loqate. Do not
+Search and verification requests go through the local POC Address API. Do not
 enter confidential or personal information; browser storage is not a production
 secret store.
+
+## Run the client with the local POC Address API
+
+Install Podman Desktop and Node.js, ensure the sibling `poc-address` repository is
+available, then run this from PowerShell:
+
+```powershell
+.\scripts\run-local.ps1
+```
+
+The script builds and starts the POC Address API container, serves a temporary
+Asset client configured for that API, and opens the client. The Asset client uses
+port `5175`; the Address API uses port `8001`. The interactive API documentation
+is available at `http://127.0.0.1:8001/docs`.
 
 ## Project links
 

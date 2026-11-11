@@ -51,7 +51,7 @@
         <figure class="docs-diagram">
           <svg viewBox="0 0 900 190" role="img" aria-labelledby="architecture-title architecture-desc">
             <title id="architecture-title">Asset Explorer application architecture</title>
-            <desc id="architecture-desc">The browser interface uses Asset model logic and local browser storage. Address lookup goes directly to Loqate. Leaflet displays OpenStreetMap tiles.</desc>
+            <desc id="architecture-desc">The browser interface uses Asset model logic and local browser storage. Address lookup goes through the POC Address API proxy to Loqate. Leaflet displays OpenStreetMap tiles.</desc>
             <defs><marker id="arch-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#918bff"/></marker></defs>
             <g fill="#171721" stroke="#514d83" stroke-width="1.5">
               <rect x="15" y="52" width="170" height="82" rx="12"/>
@@ -152,7 +152,7 @@
             </g>
             <g fill="none" stroke="#918bff" stroke-width="2" marker-end="url(#loqate-arrow)"><path d="M195 86 H245"/><path d="M435 86 H485"/><path d="M670 86 H720"/></g>
           </svg>
-          <figcaption>Search and retrieval requests are sent directly from the browser to Loqate.</figcaption>
+          <figcaption>Search and retrieval requests are sent from the browser through the POC Address API proxy to Loqate.</figcaption>
         </figure>
         <p>The API key is saved in this browser's <code>localStorage</code> under <code>loqate_api_key</code>. Browser storage is not a secure secret store. The key name matches the Address POC, but browser storage is isolated by origin, so sharing only applies when both apps use the same origin.</p>
         <p>Coordinates returned by the lookup are stored as WGS 84 (EPSG:4326). A verified address may not include coordinates; in that case, enter valid latitude and longitude before saving.</p>

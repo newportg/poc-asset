@@ -33,7 +33,8 @@ and source. A Unit can only be linked using `part_of` to a Building. Search span
 stable ID, external reference, name, address, locality, country, description, Sector,
 and Site; type and record status are separate filters.
 
-Create and edit forms can search and verify addresses through Loqate's browser APIs.
+Create and edit forms can search and verify addresses through the POC Address API
+proxy, which forwards requests to Loqate.
 The Loqate API key is stored locally under `loqate_api_key`, shared with the POC
 Address app. Choosing a verified result fills the display name, address, locality,
 country, and WGS 84 coordinates when available; the result's provenance is saved
@@ -56,7 +57,8 @@ with the Asset.
 - Local storage can be cleared or altered by the browser user. Do not enter real,
   confidential, or personal data.
 - The Loqate API key is visible to the browser and is not stored in a production
-  secret vault. Requests are sent directly from the browser to Loqate.
+  secret vault. Requests are sent from the browser through the POC Address
+  FastAPI proxy, which forwards them to Loqate.
 
 The interface and records must not be used to infer title, ownership, valuation,
 legal status, transaction inclusion, cadastral boundaries, or compliance outcomes.
