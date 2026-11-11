@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>Documentation — Asset Explorer</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./documentation.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./index.html" aria-label="Asset Explorer home">
+        <span class="brand-mark" aria-hidden="true">A</span>
+        <span>Asset<span class="brand-light"> Explorer</span><small>PROPERTY RECORDS</small></span>
+      </a>
+      <div class="header-actions">
+        <a class="button button-primary" href="./index.html">Open the app</a>
+      </div>
+    </header>
+
+    <main class="docs-main">
+      <div class="docs-intro">
+        <div class="eyebrow">ASSET EXPLORER <span class="eyebrow-line"></span> DOCUMENTATION</div>
+        <h1>How the POC works</h1>
+        <p>A guide to the Asset catalogue, typed relationships, mapped locations, and address lookup.</p>
+      </div>
+
+      <aside class="notice" role="note">
+        <span class="notice-icon" aria-hidden="true">i</span>
+        <span><strong>Demonstration only.</strong> Sample records and coordinates are illustrative. Relationships and mapped locations do not establish title, ownership, legal boundaries, or transaction inclusion. Do not enter confidential or personal information.</span>
+      </aside>
+
+      <nav class="docs-toc panel" aria-label="Documentation contents">
+        <strong>On this page</strong>
+        <a href="#overview">Overview</a>
+        <a href="#asset-model">Asset model</a>
+        <a href="#using-the-app">Using the app</a>
+        <a href="#address-lookup">Address lookup</a>
+        <a href="#maps">Maps</a>
+        <a href="#implementation">Implementation</a>
+        <a href="#data-and-limitations">Data and limitations</a>
+      </nav>
+
+      <section class="docs-section panel" id="overview">
+        <div class="section-kicker">OVERVIEW</div>
+        <h2>Explore property records and connections</h2>
+        <p>Asset Explorer is a browser-native proof of concept for real-estate Asset records. It demonstrates searchable records for land parcels, sites, estates, buildings, and units, with location details, typed Asset links, and sample Instruction references.</p>
+        <p>The main app has no backend or build step. Records are stored in the browser, while address lookup and map tiles use external services when requested or displayed.</p>
+        <figure class="docs-diagram">
+          <svg viewBox="0 0 900 190" role="img" aria-labelledby="architecture-title architecture-desc">
+            <title id="architecture-title">Asset Explorer application architecture</title>
+            <desc id="architecture-desc">The browser interface uses Asset model logic and local browser storage. Address lookup goes directly to Loqate. Leaflet displays OpenStreetMap tiles.</desc>
+            <defs><marker id="arch-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#918bff"/></marker></defs>
+            <g fill="#171721" stroke="#514d83" stroke-width="1.5">
+              <rect x="15" y="52" width="170" height="82" rx="12"/>
+              <rect x="245" y="52" width="170" height="82" rx="12"/>
+              <rect x="475" y="12" width="180" height="68" rx="12"/>
+              <rect x="475" y="108" width="180" height="68" rx="12"/>
+              <rect x="720" y="108" width="165" height="68" rx="12"/>
+            </g>
+            <g fill="#e8e8f0" font-family="system-ui, sans-serif" text-anchor="middle">
+              <text x="100" y="86" font-size="16" font-weight="700">Browser UI</text><text x="100" y="109" fill="#a5a3b8" font-size="12">HTML + JavaScript</text>
+              <text x="330" y="86" font-size="16" font-weight="700">Asset model</text><text x="330" y="109" fill="#a5a3b8" font-size="12">rules + sample records</text>
+              <text x="565" y="42" font-size="15" font-weight="700">Browser storage</text><text x="565" y="62" fill="#a5a3b8" font-size="11">records · theme · key</text>
+              <text x="565" y="137" font-size="15" font-weight="700">Loqate API</text><text x="565" y="157" fill="#a5a3b8" font-size="11">address search + verify</text>
+              <text x="802" y="137" font-size="14" font-weight="700">Leaflet map</text><text x="802" y="157" fill="#a5a3b8" font-size="11">OpenStreetMap tiles</text>
+            </g>
+            <g fill="none" stroke="#918bff" stroke-width="2" marker-end="url(#arch-arrow)">
+              <path d="M185 93 H235"/><path d="M415 75 L465 52"/><path d="M415 112 L465 137"/><path d="M655 142 H710"/>
+            </g>
+            <text x="210" y="80" fill="#a5a3b8" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle">uses</text>
+            <text x="440" y="48" fill="#a5a3b8" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle">saves</text>
+            <text x="440" y="145" fill="#a5a3b8" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle">request</text>
+          </svg>
+          <figcaption>The app runs in the browser. Loqate requests and map tiles require network access.</figcaption>
+        </figure>
+      </section>
+
+      <section class="docs-section panel" id="asset-model">
+        <div class="section-kicker">ASSET MODEL</div>
+        <h2>Asset records and typed links</h2>
+        <p>Each Asset has a stable demo ID, name, type, record status, location, and optional descriptive or external identifier fields. Location includes latitude, longitude, coordinate reference system, source, capture date, and precision.</p>
+        <figure class="docs-diagram">
+          <svg viewBox="0 0 900 300" role="img" aria-labelledby="model-title model-desc">
+            <title id="model-title">Asset record and typed relationships</title>
+            <desc id="model-desc">Assets have types such as Land parcel, Site, Estate, Building, or Unit. A Unit has an active part_of relationship to a Building. Assets can also have other typed relationships and Instruction references. Building Units are derived from active part_of links.</desc>
+            <defs><marker id="model-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#918bff"/></marker></defs>
+            <g fill="#171721" stroke="#514d83" stroke-width="1.5">
+              <rect x="330" y="18" width="240" height="76" rx="12"/>
+              <rect x="40" y="156" width="210" height="82" rx="12"/>
+              <rect x="345" y="156" width="210" height="82" rx="12"/>
+              <rect x="650" y="156" width="210" height="82" rx="12"/>
+              <rect x="340" y="258" width="220" height="30" rx="8"/>
+            </g>
+            <g fill="#e8e8f0" font-family="system-ui, sans-serif" text-anchor="middle">
+              <text x="450" y="50" font-size="17" font-weight="700">Asset</text><text x="450" y="74" fill="#a5a3b8" font-size="12">ID · type · status · location</text>
+              <text x="145" y="188" font-size="15" font-weight="700">Land · Site · Estate</text><text x="145" y="211" fill="#a5a3b8" font-size="11">location + description</text>
+              <text x="450" y="188" font-size="15" font-weight="700">Building</text><text x="450" y="211" fill="#a5a3b8" font-size="11">Units derived from links</text>
+              <text x="755" y="188" font-size="15" font-weight="700">Unit</text><text x="755" y="211" fill="#a5a3b8" font-size="11">part_of → Building</text>
+              <text x="450" y="278" fill="#d2ceff" font-size="11">Instruction references · status · role · junction ref</text>
+            </g>
+            <path d="M450 94 V124 H145 V146 M450 124 V146 M450 124 H755 V146" fill="none" stroke="#918bff" stroke-width="2" marker-end="url(#model-arrow)"/>
+            <path d="M755 238 V248 H560" fill="none" stroke="#918bff" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#model-arrow)"/>
+            <path d="M450 94 V248" fill="none" stroke="#918bff" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#model-arrow)"/>
+            <text x="583" y="119" fill="#a5a3b8" font-family="system-ui, sans-serif" font-size="10">any Asset</text>
+          </svg>
+          <figcaption>A Unit's active <code>part_of</code> link points to its enclosing Building; the Building's Unit list is derived from those links.</figcaption>
+        </figure>
+        <ul class="docs-list">
+          <li>Supported relationship types are <code>part_of</code>, <code>located_on</code>, and <code>associated_with</code>.</li>
+          <li>Links have a source and effective dates. Ending a link retains it with Ended status and an end date.</li>
+          <li>A Unit must have an active <code>part_of</code> relationship to a Building. A Building's Units are derived, not stored as duplicate inverse links.</li>
+          <li>Instruction references and WIP counts are static sample associations; the app does not create or edit them.</li>
+        </ul>
+      </section>
+
+      <section class="docs-section panel" id="using-the-app">
+        <div class="section-kicker">USING THE APP</div>
+        <h2>Search and explore records</h2>
+        <ol class="docs-list">
+          <li>Search by Asset ID, external reference, name, address, locality, country, description, Sector, or Site association. Filter by Asset type and record status.</li>
+          <li>Select a record to view its location and provenance, relationships, Instruction references, sample WIP count, and related Assets.</li>
+          <li>Choose <strong>New asset</strong> to create a record or <strong>Edit record</strong> to update its details and an active relationship.</li>
+          <li>For relationship history, use <strong>End link</strong>. The old link is retained rather than deleted.</li>
+          <li>Use <strong>Reset sample data</strong> to restore the fictional starting records and discard local edits. Theme and Loqate key preferences are stored separately.</li>
+        </ol>
+        <p>The detail pane zoom controls adjust its content from 80% to 140% independently of the catalogue and page zoom.</p>
+      </section>
+
+      <section class="docs-section panel" id="address-lookup">
+        <div class="section-kicker">ADDRESS LOOKUP</div>
+        <h2>Search and verify an address with Loqate</h2>
+        <p>In the create/edit form, choose a search country and enter an address or postcode. Live search requires a Loqate API key. Select a match to retrieve its details and fill the Asset form with the address, locality, country, and coordinates when returned.</p>
+        <figure class="docs-diagram">
+          <svg viewBox="0 0 900 170" role="img" aria-labelledby="loqate-title loqate-desc">
+            <title id="loqate-title">Loqate address search and verification flow</title>
+            <desc id="loqate-desc">The user enters a country, address query, and API key. The browser searches Loqate, the user selects a result, and the browser retrieves verified address details to populate the form.</desc>
+            <defs><marker id="loqate-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#918bff"/></marker></defs>
+            <g fill="#171721" stroke="#514d83" stroke-width="1.5">
+              <rect x="20" y="48" width="175" height="76" rx="12"/>
+              <rect x="255" y="48" width="180" height="76" rx="12"/>
+              <rect x="495" y="48" width="175" height="76" rx="12"/>
+              <rect x="730" y="48" width="155" height="76" rx="12"/>
+            </g>
+            <g fill="#e8e8f0" font-family="system-ui, sans-serif" text-anchor="middle">
+              <text x="107" y="79" font-size="15" font-weight="700">Enter query</text><text x="107" y="101" fill="#a5a3b8" font-size="11">country + API key</text>
+              <text x="345" y="79" font-size="15" font-weight="700">Search Loqate</text><text x="345" y="101" fill="#a5a3b8" font-size="11">browser request</text>
+              <text x="582" y="79" font-size="15" font-weight="700">Select match</text><text x="582" y="101" fill="#a5a3b8" font-size="11">retrieve details</text>
+              <text x="807" y="79" font-size="15" font-weight="700">Fill form</text><text x="807" y="101" fill="#a5a3b8" font-size="11">address + location</text>
+            </g>
+            <g fill="none" stroke="#918bff" stroke-width="2" marker-end="url(#loqate-arrow)"><path d="M195 86 H245"/><path d="M435 86 H485"/><path d="M670 86 H720"/></g>
+          </svg>
+          <figcaption>Search and retrieval requests are sent directly from the browser to Loqate.</figcaption>
+        </figure>
+        <p>The API key is saved in this browser's <code>localStorage</code> under <code>loqate_api_key</code>. Browser storage is not a secure secret store. The key name matches the Address POC, but browser storage is isolated by origin, so sharing only applies when both apps use the same origin.</p>
+        <p>Coordinates returned by the lookup are stored as WGS 84 (EPSG:4326). A verified address may not include coordinates; in that case, enter valid latitude and longitude before saving.</p>
+      </section>
+
+      <section class="docs-section panel" id="maps">
+        <div class="section-kicker">MAPS</div>
+        <h2>Preview and open a location map</h2>
+        <p>Asset coordinates are used to center a Leaflet map preview in the details panel. Click the preview to open a larger interactive map. The map uses OpenStreetMap tiles and attribution; map rendering requires internet access.</p>
+        <div class="docs-callout">
+          <strong>Map interpretation</strong>
+          <span>The map plots the stored latitude and longitude. It does not transform other coordinate reference systems, show property boundary geometry, or verify title, ownership, or legal boundaries.</span>
+        </div>
+      </section>
+
+      <section class="docs-section panel" id="implementation">
+        <div class="section-kicker">IMPLEMENTATION</div>
+        <h2>Files and local checks</h2>
+        <ul class="docs-list">
+          <li><code>src/index.html</code> and <code>src/documentation.html</code> are static pages published together from <code>src/</code>.</li>
+          <li><code>src/app.js</code> handles the interface, forms, persistence, Loqate interactions, and maps. <code>src/assets.js</code> contains sample fixtures, model validation, search helpers, and derived Unit lookup.</li>
+          <li><code>src/loqate-client.js</code> builds address search and retrieval requests. Leaflet is loaded from its CDN; tiles are requested from OpenStreetMap.</li>
+          <li><code>tests/assets.test.mjs</code> covers model rules and derived relationships; <code>tests/loqate-client.test.mjs</code> covers Loqate request behavior.</li>
+        </ul>
+        <p>Open <code>src/index.html</code> in a modern browser or serve the <code>src/</code> directory with a static web server. No build or install step is needed. Run the tests from the repository root with <code>node --test tests/*.test.mjs</code>.</p>
+      </section>
+
+      <section class="docs-section panel" id="data-and-limitations">
+        <div class="section-kicker">DATA AND LIMITATIONS</div>
+        <h2>What this POC does not provide</h2>
+        <p>Asset records are stored in browser <code>localStorage</code> under <code>poc-asset.records.v1</code>; the theme is stored separately under <code>poc-asset.theme.v1</code>. Data is not encrypted, backed up, or synchronized. Browser users can inspect or change stored data.</p>
+        <ul class="docs-list">
+          <li>No authentication, authorization, server persistence, or multi-user access</li>
+          <li>No production audit guarantees or historic snapshots of Asset fields; local demo audit entries are illustrative</li>
+          <li>No boundary geometry or authoritative boundary source, Party links, or editable matter/Instruction associations</li>
+          <li>No coordinate transformation for alternate coordinate systems</li>
+          <li>No inference of title, ownership, valuation, legal status, transaction inclusion, cadastral boundaries, or compliance outcomes</li>
+        </ul>
+        <p>Use fictional demo data only. Do not enter real, confidential, or personal information.</p>
+      </section>
+
+      <footer class="page-footer">
+        <span>ASSET EXPLORER <span class="footer-dot">/</span> DOCUMENTATION</span>
+        <span><a href="./index.html">Return to the Asset catalogue</a></span>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>

@@ -6,6 +6,8 @@
 `src/assets.js` owns the sample records and pure search/validation helpers. There is
 no build pipeline or server. The app loads directly as browser-native JavaScript;
 Leaflet is loaded from its CDN and map tiles are fetched from OpenStreetMap.
+The published `src/documentation.html` page provides an in-app guide, with page-specific
+styles in `src/documentation.css`.
 
 Records are held as browser-local JSON under `poc-asset.records.v1`. The selected
 light or dark theme is saved separately under `poc-asset.theme.v1`. Asset latitude
