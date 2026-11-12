@@ -32,17 +32,20 @@
         <span><strong>Demonstration only.</strong> Sample records and coordinates are illustrative. Relationships and mapped locations do not establish title, ownership, legal boundaries, or transaction inclusion. Do not enter confidential or personal information.</span>
       </aside>
 
-      <nav class="docs-toc panel" aria-label="Documentation contents">
-        <strong>On this page</strong>
-        <a href="#overview">Overview</a>
-        <a href="#asset-model">Asset model</a>
-        <a href="#using-the-app">Using the app</a>
-        <a href="#address-lookup">Address lookup</a>
-        <a href="#maps">Maps</a>
-        <a href="#implementation">Implementation</a>
-        <a href="#data-and-limitations">Data and limitations</a>
-      </nav>
+      <div class="docs-layout">
+        <nav class="docs-toc panel" aria-label="Documentation contents">
+          <strong>On this page</strong>
+          <a href="#overview">Overview</a>
+          <a href="#asset-model">Asset model</a>
+          <a href="#using-the-app">Using the app</a>
+          <a href="#address-lookup">Address lookup</a>
+          <a href="#maps">Maps</a>
+          <a href="#implementation">Implementation</a>
+          <a href="#data-and-limitations">Data and limitations</a>
+          <a href="#recreation-spec">Recreation spec</a>
+        </nav>
 
+        <div class="docs-content">
       <section class="docs-section panel" id="overview">
         <div class="section-kicker">OVERVIEW</div>
         <h2>Explore property records and connections</h2>
@@ -193,6 +196,91 @@
         </ul>
         <p>Use fictional demo data only. Do not enter real, confidential, or personal information.</p>
       </section>
+      <section class="docs-section panel" id="recreation-spec">
+        <div class="section-kicker">RECREATION SPEC</div>
+        <h2>Recreating the application</h2>
+        <p>The complete source-independent recreation guide is also available as
+          <a href="./recreation-spec.md">recreation-spec.md</a>. The full guide is
+          included below so this documentation page is sufficient to understand
+          how to rebuild the static Asset Explorer without relying on the original
+          source.</p>
+
+        <h3>Runtime files</h3>
+        <pre><code>src/index.html             Application shell and page layout
+src/app.js                 UI rendering, editing, persistence, and map behavior
+src/assets.js              Asset fixtures, validation, search, and relationships
+src/config.js              Optional POC Address API base URL
+src/loqate-client.js       Address lookup HTTP client
+src/documentation.html     In-app documentation
+src/documentation.css      Documentation page styles
+tests/assets.test.mjs      Asset model tests
+tests/loqate-client.test.mjs  Address client tests</code></pre>
+        <p>Leaflet is loaded from its CDN and OpenStreetMap provides map tiles.
+          The app must work when opened directly as a static page.</p>
+
+        <h3>Data and storage</h3>
+        <p>Store the editable catalogue as JSON under
+          <code>poc-asset.records.v1</code> in <code>localStorage</code>. Store
+          the theme under <code>poc-asset.theme.v1</code> and the shared Loqate
+          key under <code>loqate_api_key</code>. Reset restores the fictional
+          sample data.</p>
+        <p>An Asset has a stable ID, type, status, display name, address,
+          country, latitude, longitude, CRS, source, capture date, precision,
+          optional external identifier, Sector/Site labels, typed links, and
+          Instruction references.</p>
+        <p>Supported Asset types include Land parcel, Site, Estate, Building,
+          and Unit. Links use <code>part_of</code>, <code>located_on</code>, or
+          <code>associated_with</code>, with effective dates and source. A Unit
+          can only use an active <code>part_of</code> link to a Building.
+          Building Units are derived from active links rather than stored as
+          inverse links.</p>
+
+        <h3>UI behavior</h3>
+        <ul class="docs-list">
+          <li>Searchable Asset catalogue.</li>
+          <li>Type and record-status filters.</li>
+          <li>Selected Asset detail panel.</li>
+          <li>Create/edit dialog with validation.</li>
+          <li>Map preview and full-size map dialog.</li>
+          <li>Detail-pane zoom from 80% to 140%.</li>
+          <li>Light/dark theme toggle.</li>
+          <li>Reset sample-data action.</li>
+        </ul>
+        <p>Search covers stable ID, external reference, name, address, locality,
+          country, description, Sector, and Site. Selecting a result renders its
+          details and centers the map on valid coordinates.</p>
+        <p>The detail panel must show location/provenance, links, Instruction
+          references, WIP counts, and related Assets. Ending a relationship
+          retains its history with an ended status and end date.</p>
+
+        <h3>Address lookup</h3>
+        <p>The create/edit form can call the POC Address API using
+          <code>loqate-client.js</code>. Search returns selectable address
+          results. Selecting a verified result fills display name, address,
+          locality, country, and WGS84 coordinates when present, and stores
+          provenance on the Asset.</p>
+        <p>The API base URL is read from
+          <code>window.ASSET_API_BASE_URL</code>. Live lookup requires the shared
+          <code>loqate_api_key</code> and network access. The Asset app does not
+          own the Loqate proxy.</p>
+
+        <h3>Validation and tests</h3>
+        <p>Validate required fields, stable ID uniqueness, coordinates, valid
+          Asset types and statuses, relationship target types, date ordering,
+          and Unit-to-Building rules. Keep sample records fictional.</p>
+        <pre><code>node --test tests/*.test.mjs</code></pre>
+        <p>The test suite must cover model validation, search/filter behavior,
+          inverse relationship derivation, relationship history, and Loqate
+          client requests.</p>
+
+        <h3>Limitations</h3>
+        <p>There is no authentication, authorization, server persistence,
+          production audit trail, historic field snapshots, title/ownership
+          determination, legal status, boundary geometry, coordinate
+          transformation, or compliance workflow. Do not enter real personal or
+          confidential information.</p>
+      </section>
+        </div>
 
       <footer class="page-footer">
         <span>ASSET EXPLORER <span class="footer-dot">/</span> DOCUMENTATION</span>
@@ -200,5 +288,27 @@
       </footer>
     </main>
   </div>
+  <script>
+    (() => {
+      const links = [...document.querySelectorAll('.docs-toc a')];
+      const sections = links.map(link => document.querySelector(link.hash)).filter(Boolean);
+      links.forEach(link => link.addEventListener('click', event => {
+        const section = document.querySelector(link.hash);
+        if (!section) return;
+        event.preventDefault();
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        history.replaceState(null, '', link.hash);
+      }));
+      const setActive = section => links.forEach(link => link.classList.toggle('active', link.hash === `#${section.id}`));
+      if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver(entries => {
+          const visible = entries.filter(entry => entry.isIntersecting)
+            .sort((left, right) => left.boundingClientRect.top - right.boundingClientRect.top);
+          if (visible[0]) setActive(visible[0].target);
+        }, { rootMargin: '-90px 0px -65% 0px' });
+        sections.forEach(section => observer.observe(section));
+      } else if (sections[0]) setActive(sections[0]);
+    })();
+  </script>
 </body>
 </html>

@@ -64,11 +64,16 @@ Asset client configured for that API, and opens the client. The Asset client use
 port `5175`; the Address API uses port `8001`. The interactive API documentation
 is available at `http://127.0.0.1:8001/docs`.
 
+The local runner rebuilds the published recreation documentation before serving
+the temporary client. Run `.\scripts\publish-docs.ps1` directly to refresh it
+without starting the local services.
+
 ## Project links
 
 - Knowledge-vault project: [Asset](file:///C:/Source/Obsidian/Projects/POC-Documentation/POC-Documentation-Vault/projects/Asset/README.md)
 - Requirements: [Asset PRD](file:///C:/Source/Obsidian/Projects/POC-Documentation/POC-Documentation-Vault/projects/Asset/asset-prd.md)
 - Implementation design and limitations: [docs/design.md](docs/design.md)
+- Source-independent recreation guide: [src/recreation-spec.md](src/recreation-spec.md)
 
 ## Validation
 

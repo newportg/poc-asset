@@ -42,6 +42,9 @@ try {
         throw "The sibling POC Address repository was not found at $addressRepoRoot."
     }
 
+    Write-Host "Rebuilding Asset documentation..."
+    & (Join-Path $PSScriptRoot "publish-docs.ps1")
+
     & podman info *> $null
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Starting the Podman machine..."
