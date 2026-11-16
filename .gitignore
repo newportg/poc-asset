@@ -1,3 +1,6 @@
 .DS_Store
 Thumbs.db
 *.log
+api/asset.db
+api/asset.db-*
+__pycache__/

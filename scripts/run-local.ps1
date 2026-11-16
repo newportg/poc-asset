@@ -3,6 +3,9 @@ param(
     [int]$ApiPort = 8001,
 
     [ValidateRange(1, 65535)]
+    [int]$AssetApiPort = 8002,
+
+    [ValidateRange(1, 65535)]
     [int]$ClientPort = 5175,
 
     [string]$CaCertificatePath
@@ -11,16 +14,20 @@ param(
 $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $addressRepoRoot = (Resolve-Path (Join-Path $repoRoot "..\poc-address")).Path
+$assetApiDirectory = Join-Path $repoRoot "api"
 $apiDirectory = Join-Path $addressRepoRoot "api"
 $clientSource = Join-Path $repoRoot "src"
 $containerfile = Join-Path $apiDirectory "Containerfile"
 $staticServer = Join-Path $PSScriptRoot "serve-client.js"
 $imageName = "poc-address-loqate-api:local"
 $containerName = "poc-asset-local-address-api-$PID"
+$assetContainerName = "poc-asset-local-asset-api-$PID"
+$assetImageName = "poc-asset-api:local"
 $temporaryDirectory = Join-Path ([System.IO.Path]::GetTempPath()) "poc-asset-local-$([guid]::NewGuid().ToString('N'))"
 $hostCaPath = $null
 $staticProcess = $null
 $containerStarted = $false
+$assetContainerStarted = $false
 
 function Invoke-Podman {
     param([string[]]$Arguments)
@@ -55,7 +62,7 @@ try {
     $clientDirectory = Join-Path $temporaryDirectory "client"
     Copy-Item -Path $clientSource -Destination $clientDirectory -Recurse
     Set-Content -LiteralPath (Join-Path $clientDirectory "config.js") `
-        -Value "window.ADDRESS_API_BASE_URL = `"http://127.0.0.1:$ApiPort`";" -Encoding ASCII
+        -Value "window.ADDRESS_API_BASE_URL = `"http://127.0.0.1:$ApiPort`"; window.ASSET_API_BASE_URL = `"http://127.0.0.1:$AssetApiPort`";" -Encoding ASCII
 
     if ($CaCertificatePath) {
         $resolvedCaPath = (Resolve-Path -LiteralPath $CaCertificatePath).Path
@@ -97,6 +104,25 @@ try {
     Invoke-Podman $runArguments
     $containerStarted = $true
 
+    Write-Host "Building the Asset API image..."
+    Invoke-Podman @(
+        "build", "--network", "host", "--tag", $assetImageName,
+        "--file", (Join-Path $assetApiDirectory "Containerfile"), $assetApiDirectory
+    )
+    $assetApiUrl = "http://127.0.0.1:$AssetApiPort"
+    Write-Host "Starting the Asset API container on $assetApiUrl..."
+    $assetRunArguments = @(
+        "run", "--detach", "--name", $assetContainerName, "--network", "host",
+        "--env", "PORT=$AssetApiPort",
+        "--env", "ADDRESS_API_BASE_URL=$localApiUrl"
+    )
+    if ($env:LOQATE_API_KEY) {
+        $assetRunArguments += @("--env", "LOQATE_API_KEY=$($env:LOQATE_API_KEY)")
+    }
+    $assetRunArguments += $assetImageName
+    Invoke-Podman $assetRunArguments
+    $assetContainerStarted = $true
+
     $apiReady = $false
     for ($attempt = 0; $attempt -lt 60; $attempt++) {
         try {
@@ -112,6 +138,23 @@ try {
     if (-not $apiReady) {
         & podman logs $containerName
         throw "The POC Address API did not become healthy at $localApiUrl/health."
+    }
+
+    $assetApiReady = $false
+    for ($attempt = 0; $attempt -lt 60; $attempt++) {
+        try {
+            $health = Invoke-RestMethod -Uri "$assetApiUrl/health" -TimeoutSec 2
+            if ($health.status -eq "ok") {
+                $assetApiReady = $true
+                break
+            }
+        } catch {
+            Start-Sleep -Seconds 1
+        }
+    }
+    if (-not $assetApiReady) {
+        & podman logs $assetContainerName
+        throw "The Asset API did not become healthy at $assetApiUrl/health."
     }
 
     $clientUrl = "http://127.0.0.1:$ClientPort/"
@@ -145,6 +188,7 @@ try {
     }
 
     Write-Host "Address API docs: $localApiUrl/docs"
+    Write-Host "Asset API docs:   $assetApiUrl/docs"
     Write-Host "Asset client:    $clientUrl"
     Start-Process $clientUrl
     Read-Host "Press Enter to stop the Asset client and Address API"
@@ -158,6 +202,10 @@ try {
     if ($containerStarted) {
         & podman stop --time 5 $containerName *> $null
         & podman rm $containerName *> $null
+    }
+    if ($assetContainerStarted) {
+        & podman stop --time 5 $assetContainerName *> $null
+        & podman rm $assetContainerName *> $null
     }
     if (Test-Path $temporaryDirectory) {
         Remove-Item -LiteralPath $temporaryDirectory -Recurse -Force

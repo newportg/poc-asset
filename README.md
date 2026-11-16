@@ -1,6 +1,6 @@
-# Asset Explorer — static POC
+# Asset Explorer — Asset API POC
 
-A browser-native demonstration of real-estate Asset records, typed relationships,
+A browser client and SQLite-backed API for real-estate Asset records, typed relationships,
 and matter/Instruction references. This is a standalone prototype with no server or
 build step. Leaflet and OpenStreetMap map tiles require an internet connection.
 
@@ -18,9 +18,27 @@ when changes are pushed to `master`, or when run manually. In the repository's
 **Settings → Pages**, set the build and deployment source to **GitHub Actions**.
 After the workflow succeeds, GitHub Pages will show the published site URL.
 
-Edits are saved in this browser's `localStorage`. Use **Reset sample data** to remove
-local changes and restore the included sample records. Browser storage is not shared,
-secure, backed up, or suitable for production data.
+Asset records are stored by the SQLite-backed API in `api\asset.db` by default.
+Set `ASSET_DB_PATH` to override the database location. Use **Reset sample data** to
+replace the API records with the included sample records.
+
+## Asset API
+
+The API defaults to `http://127.0.0.1:8002` and provides:
+
+- `GET /api/assets`
+- `GET /api/assets/{id}`
+- `POST /api/assets`
+- `PUT /api/assets/{id}`
+- `DELETE /api/assets/{id}`
+- `POST /api/assets/{id}/enrich` verifies the stored address through the
+  configured Address API and persists the returned address and coordinates.
+
+Asset records accept additional JSON fields so address, location, Party references,
+relationships, and future domain fields can be stored without changing the API schema.
+Set `ADDRESS_API_BASE_URL` for the Address API URL. Enrichment requests accept the
+caller's `X-Loqate-Api-Key` header, or the Asset API can use the server-side
+`LOQATE_API_KEY` environment variable.
 
 ## What is included
 

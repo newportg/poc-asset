@@ -10,7 +10,10 @@
   const toast = $("#toast");
   const THEME_STORAGE_KEY = "poc-asset.theme.v1";
   const LOQATE_KEY_STORAGE_KEY = "loqate_api_key";
-  let assets = loadAssets();
+  const assetApiBaseUrl = typeof window.ASSET_API_BASE_URL === "string"
+    ? window.ASSET_API_BASE_URL.trim().replace(/\/+$/, "")
+    : "";
+  let assets = [];
   let loqateApiKey = loadLoqateKey();
   let selectedId = assets[0]?.id || "";
   let detailZoom = 100;
@@ -189,28 +192,31 @@
 
   setTheme(loadTheme());
 
-  function loadAssets() {
-    try {
-      const saved = localStorage.getItem(M.STORAGE_KEY);
-      if (!saved) return M.getSampleAssets();
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.every(item => item && typeof item.id === "string")) return parsed;
-    } catch (error) {
-      console.warn("Could not read the local demo records.", error);
-    }
-    return M.getSampleAssets();
+  async function assetApiRequest(path, options = {}) {
+    if (!assetApiBaseUrl) throw new Error("Asset API is not configured.");
+    const response = await fetch(`${assetApiBaseUrl}${path}`, {
+      ...options,
+      headers: { Accept: "application/json", ...(options.body ? { "Content-Type": "application/json" } : {}), ...(options.headers || {}) }
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.detail || `Asset API request failed (HTTP ${response.status}).`);
+    return body;
   }
 
-  function persist() {
-    try {
-      localStorage.setItem(M.STORAGE_KEY, JSON.stringify(assets));
-      $("#reset-button").classList.remove("unsaved");
-      return true;
-    } catch (error) {
-      showToast("Could not save. Browser storage may be unavailable or full.", "error");
-      console.error(error);
-      return false;
-    }
+  async function loadAssetsFromApi() {
+    const response = await assetApiRequest("/api/assets");
+    const records = Array.isArray(response.items) ? response.items : [];
+    if (records.length) return records;
+    const samples = M.getSampleAssets();
+    for (const sample of samples) await assetApiRequest("/api/assets", { method: "POST", body: JSON.stringify(sample) });
+    return samples;
+  }
+
+  async function persistAsset(asset, existing) {
+    return assetApiRequest(existing ? `/api/assets/${encodeURIComponent(asset.id)}` : "/api/assets", {
+      method: existing ? "PUT" : "POST",
+      body: JSON.stringify(asset)
+    });
   }
 
   function escapeHtml(value = "") {
@@ -491,7 +497,7 @@
     return `AST-${highest + 1}`;
   }
 
-  function submitAsset(event) {
+  async function submitAsset(event) {
     event.preventDefault();
     const record = getFormAsset();
     const errors = M.validateAsset(record, assets, record.current?.id || "");
@@ -516,16 +522,21 @@
       instructions: record.current?.instructions || [], wipCount: record.current?.wipCount || 0, relationships, history,
       createdAt: record.current?.createdAt || now, updatedAt: now
     };
-    if (record.current) assets = assets.map(item => item.id === record.id ? saved : item);
-    else assets.push(saved);
-    if (!persist()) return;
-    selectedId = saved.id;
-    dialog.close();
-    renderList();
-    showToast(record.current ? "Asset updated and saved in this browser." : "Asset created and saved in this browser.");
+    try {
+      const persisted = await persistAsset(saved, Boolean(record.current));
+      if (record.current) assets = assets.map(item => item.id === record.id ? persisted : item);
+      else assets.push(persisted);
+      selectedId = persisted.id;
+      dialog.close();
+      renderList();
+      showToast(record.current ? "Asset updated through the Asset API." : "Asset created through the Asset API.");
+    } catch (error) {
+      console.error("Could not save Asset through the Asset API.", error);
+      showToast(error instanceof Error ? error.message : "Could not save Asset through the Asset API.", "error");
+    }
   }
 
-  function endRelationship(linkId) {
+  async function endRelationship(linkId) {
     const asset = assets.find(item => item.id === selectedId);
     const link = asset?.relationships?.find(item => item.id === linkId && item.status === "Active");
     if (!link) return;
@@ -536,10 +547,15 @@
     const date = new Date().toISOString().slice(0, 10);
     asset.relationships = asset.relationships.map(item => item.id === linkId ? { ...item, status: "Ended", to: date } : item);
     asset.history = [...(asset.history || []), { action: "Asset relationship ended", date, note: `${link.type} → ${link.targetId}; prior link retained` }];
-    if (persist()) {
+    try {
+      const saved = await persistAsset(asset, true);
+      assets = assets.map(item => item.id === saved.id ? saved : item);
       renderList();
       document.querySelector('[data-tab="connections"]')?.click();
       showToast("Relationship ended; its history is retained.");
+    } catch (error) {
+      console.error("Could not save the Asset relationship through the Asset API.", error);
+      showToast(error instanceof Error ? error.message : "Could not save the Asset relationship.", "error");
     }
   }
 
@@ -583,11 +599,18 @@
   });
   $("#reset-button").addEventListener("click", () => {
     if (!window.confirm("Reset this browser's Asset demo records to the original sample data? Your local changes will be removed.")) return;
-    assets = M.getSampleAssets();
-    selectedId = assets[0]?.id || "";
-    try { localStorage.removeItem(M.STORAGE_KEY); } catch (error) { console.warn(error); }
-    renderList();
-    showToast("Sample data restored. Local changes were removed.");
+    void (async () => {
+      try {
+        for (const asset of assets) await assetApiRequest(`/api/assets/${encodeURIComponent(asset.id)}`, { method: "DELETE" });
+        assets = await loadAssetsFromApi();
+        selectedId = assets[0]?.id || "";
+        renderList();
+        showToast("Sample data restored through the Asset API.");
+      } catch (error) {
+        console.error("Could not reset Asset records through the Asset API.", error);
+        showToast(error instanceof Error ? error.message : "Could not reset Asset records.", "error");
+      }
+    })();
   });
   $("#close-dialog").addEventListener("click", () => dialog.close());
   $("#cancel-dialog").addEventListener("click", () => dialog.close());
@@ -625,4 +648,14 @@
     }
   });
   renderList();
+  void (async () => {
+    try {
+      assets = await loadAssetsFromApi();
+      selectedId = assets[0]?.id || "";
+      renderList();
+    } catch (error) {
+      console.error("Could not load Assets from the Asset API.", error);
+      showToast(error instanceof Error ? error.message : "Could not load Assets from the Asset API.", "error");
+    }
+  })();
 })();
